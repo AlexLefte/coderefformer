@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CodeRefFormer — Demo Restaurare</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@300;400;500;600;700&family=Noto+Sans+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #f5f6fa; color: #1a1d2e; font-family: 'Noto Sans', sans-serif; min-height: 100vh; }
+    img { color: transparent; font-size: 0; display: block; }
+    @keyframes fadeInUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+    .thumb { width: 64px; height: 64px; border-radius: 8px; overflow: hidden; cursor: pointer; position: relative; background: #fff; border: 2px solid #dde1ee; transition: transform .15s, border-color .2s; flex-shrink: 0; }
+    .thumb:hover { border-color: #3b5bdb; transform: translateY(-2px); }
+    .thumb.active { border-color: #3b5bdb; box-shadow: 0 0 0 3px rgba(59,91,219,.18); }
+    .thumb-bg { position: absolute; inset: 0; background: repeating-linear-gradient(45deg,#fff 0 6px,#f0f2f8 6px 12px); }
+    .thumb img, .thumb video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; pointer-events: none; }
+    .thumb-num { position: absolute; bottom: 3px; right: 5px; font-family: 'Noto Sans Mono', monospace; font-size: 10px; color: rgba(255,255,255,.9); background: rgba(0,0,0,.55); padding: 1px 4px; border-radius: 3px; }
+
+    .dot { width: 6px; height: 6px; border-radius: 50%; background: #dde1ee; transition: all .2s; }
+    .dot.active { background: #3b5bdb; transform: scale(1.4); }
+
+    .method-btn { display: flex; align-items: center; gap: 6px; padding: 5px 11px; border-radius: 7px; border: 1px solid #dde1ee; background: #fff; font-size: 0.74rem; cursor: pointer; font-family: 'Noto Sans', sans-serif; color: #1a1d2e; transition: border-color .15s; }
+    .method-btn:hover { border-color: #3b5bdb; }
+    .method-btn.active { border-color: #3b5bdb; }
+
+    .stack-card { border: 1px solid #dde1ee; border-radius: 10px; overflow: hidden; background: #fff; }
+    .stack-media { position: relative; aspect-ratio: 1/1; background: repeating-linear-gradient(45deg,#fff 0 8px,#f0f2f8 8px 16px); display: flex; align-items: center; justify-content: center; }
+    .stack-media img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+    .stack-placeholder { font-family: 'Noto Sans Mono', monospace; font-size: 0.6rem; color: #6b7296; background: #f5f6fa; padding: 3px 7px; border-radius: 4px; }
+    .stack-label { font-family: 'Noto Sans Mono', monospace; font-size: 0.68rem; text-align: center; padding: 6px 4px 7px; letter-spacing: 0.03em; font-weight: 500; background: #f0f2f8; border-top: 1px solid #dde1ee; }
+
+    .vid-cell { display: flex; flex-direction: column; background: #fff; border-radius: 10px; overflow: hidden; border: 1px solid #dde1ee; }
+    .vid-cell-media { position: relative; aspect-ratio: 1/1; background: repeating-linear-gradient(45deg,#fff 0 8px,#f0f2f8 8px 16px); }
+    .vid-cell-media img, .vid-cell-media video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+    .vid-cell-footer { font-family: 'Noto Sans Mono', monospace; font-size: 0.7rem; text-align: center; padding: 6px 4px 7px; letter-spacing: 0.03em; font-weight: 500; background: #f0f2f8; border-top: 1px solid #dde1ee; }
+
+    .ctrl-btn { display: flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 7px; border: 1px solid #dde1ee; background: #fff; color: #1a1d2e; font-family: 'Noto Sans', sans-serif; font-size: 0.8rem; cursor: pointer; transition: background .15s, color .15s, border-color .15s; }
+    .ctrl-btn.on { background: #3b5bdb; color: #fff; border-color: #3b5bdb; }
+
+    body.zoom-on { cursor: crosshair; }
+  </style>
+</head>
+<body>
+
+<div id="root">
+
+  <!-- ── HEADER ── -->
+  <header style="background:linear-gradient(135deg,#eef1fb 0%,#f5f7ff 60%,#edf4ff 100%);border-bottom:1px solid #dde1ee;padding:56px 24px 44px;text-align:center;">
+    <h1 style="font-weight:700;font-size:clamp(2rem,4vw,3.2rem);letter-spacing:-0.02em;line-height:1.1;margin:0 0 14px;">
+      CodeRefFormer — <span style="color:#3b5bdb;">Demo Restaurare Facială</span>
+    </h1>
+    <p style="color:#6b7296;font-size:0.95rem;max-width:800px;margin:0 auto;line-height:1.6;">
+      Restaurare facială ghidată prin referință — comparație interactivă pe imagini și pe secvențe video.
+    </p>
+  </header>
+
+  <main style="max-width:1280px;margin:0 auto;padding:48px 24px 72px;">
+
+    <!-- ══════════ SECȚIUNEA 1 · IMAGINI ══════════ -->
+    <section style="margin-bottom:64px;animation:fadeInUp .4s ease;text-align:center;">
+      <div style="display:flex;align-items:baseline;gap:12px;margin-bottom:6px;justify-content:center;">
+        <span style="font-family:'Noto Sans Mono',monospace;font-size:0.72rem;letter-spacing:0.14em;text-transform:uppercase;color:#3b5bdb;">01 · Imagini</span>
+      </div>
+      <h2 style="font-size:1.5rem;font-weight:600;margin:0 0 6px;letter-spacing:-0.01em;">Comparație pe imagini</h2>
+      <p style="color:#6b7296;font-size:0.9rem;margin:0 0 26px;max-width:680px;line-height:1.6;margin-left:auto;margin-right:auto;">
+      În <b style="color:#d6621a;">stânga</b> apare <b>restaurarea generică</b>, în <b style="color:#1971c2;">dreapta</b> cea <b>ghidată prin referință</b>.
+        Coloana din stânga prezintă imaginea degradată, originalul, respectiv referința.
+      </p>
+
+      <div id="img-thumbs" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px;justify-content:center;"></div>
+      <div id="img-dots"   style="display:flex;gap:6px;margin-bottom:20px;justify-content:center;"></div>
+
+      <!-- selectori metodă -->
+      <div style="display:flex;gap:18px;justify-content:center;flex-wrap:wrap;margin-bottom:16px;max-width:760px;margin-left:auto;margin-right:auto;">
+        <div style="flex:1;min-width:160px;">
+          <div style="font-family:'Noto Sans Mono',monospace;font-size:0.66rem;letter-spacing:0.06em;text-transform:uppercase;color:#6b7296;margin-bottom:6px;">Stânga ◀</div>
+          <div id="left-btns" style="display:flex;gap:6px;flex-wrap:wrap;"></div>
+        </div>
+        <div style="flex:1;min-width:160px;">
+          <div style="font-family:'Noto Sans Mono',monospace;font-size:0.66rem;letter-spacing:0.06em;text-transform:uppercase;color:#6b7296;margin-bottom:6px;text-align:right;">▶ Dreapta</div>
+          <div id="right-btns" style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;"></div>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:24px;align-items:flex-start;flex-wrap:wrap;justify-content:center;">
+
+        <!-- Ref -->
+        <div style="flex:1;min-width:260px;max-width:420px;">
+          <div class="stack-card">
+            <div class="stack-media"><span class="stack-placeholder">ref.png</span><img id="stack-ref" src="" alt=""></div>
+            <div class="stack-label" style="color:#7048e8;">Ref -- referință</div>
+          </div>
+        </div>
+
+        <!-- HQ -->
+        <div style="flex:1;min-width:260px;max-width:420px;">
+          <div class="stack-card">
+            <div class="stack-media"><span class="stack-placeholder">hq.png</span><img id="stack-hq" src="" alt=""></div>
+            <div class="stack-label" style="color:#0ca678;">HQ -- original</div>
+          </div>
+        </div>
+
+        <!-- coloana slider -->
+        <div style="flex:1;min-width:260px;max-width:420px;">
+
+
+          <!-- slider -->
+          <div id="slider" style="position:relative;aspect-ratio:1/1;border-radius:10px;overflow:hidden;border:1px solid #dde1ee;user-select:none;touch-action:none;cursor:pointer;background:#fff;">
+            <!-- dreapta -->
+            <div style="position:absolute;inset:0;">
+              <div style="position:absolute;inset:0;background:repeating-linear-gradient(45deg,#eef3fb 0 11px,#e2ebf9 11px 22px);display:flex;align-items:center;justify-content:center;">
+                <span id="sl-right-lbl" style="font-family:'Noto Sans Mono',monospace;font-size:0.72rem;color:#1971c2;background:#fff;padding:4px 9px;border-radius:5px;"></span>
+              </div>
+              <img id="sl-right" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;" src="" alt="">
+            </div>
+            <!-- stânga (clipped) -->
+            <div id="sl-overlay" style="position:absolute;inset:0;clip-path:inset(0 50% 0 0);">
+              <div style="position:absolute;inset:0;background:repeating-linear-gradient(45deg,#fdf2ea 0 11px,#f8e7d8 11px 22px);display:flex;align-items:center;justify-content:center;">
+                <span id="sl-left-lbl" style="font-family:'Noto Sans Mono',monospace;font-size:0.72rem;color:#d6621a;background:#fff;padding:4px 9px;border-radius:5px;"></span>
+              </div>
+              <img id="sl-left" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;" src="" alt="">
+            </div>
+            <!-- etichete colțuri -->
+            <div id="lbl-left"  style="position:absolute;top:10px;left:10px;font-family:'Noto Sans Mono',monospace;font-size:0.66rem;color:#fff;background:rgba(20,22,40,.7);padding:3px 8px;border-radius:5px;pointer-events:none;"></div>
+            <div id="lbl-right" style="position:absolute;top:10px;right:10px;font-family:'Noto Sans Mono',monospace;font-size:0.66rem;color:#fff;background:rgba(20,22,40,.7);padding:3px 8px;border-radius:5px;pointer-events:none;"></div>
+            <!-- mâner -->
+            <div id="sl-handle" style="position:absolute;top:0;bottom:0;left:50%;width:2px;background:#fff;box-shadow:0 0 0 1px rgba(0,0,0,.18);transform:translateX(-1px);pointer-events:none;">
+              <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:44px;height:44px;border-radius:50%;background:#fff;box-shadow:0 2px 10px rgba(0,0,0,.28);display:flex;align-items:center;justify-content:center;gap:2px;">
+                <span style="font-size:1rem;line-height:1;color:#d6621a;">◀</span>
+                <span style="font-size:1rem;line-height:1;color:#1971c2;">▶</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="stack-label" style="color:#666666;">Comparație</div>
+
+        </div>
+      </div>
+      <p style="margin-top:18px;font-family:'Noto Sans Mono',monospace;font-size:0.68rem;color:#6b7296;line-height:1.7;max-width:680px;margin-left:auto;margin-right:auto;text-align:left;">
+        * <b style="color:#3b5bdb;">CodeRefFormer Var. A++</b> reprezintă varianta în care informația de identitate este injectată atât în decodorul VAE, cât și la nivelul transformer-ului de selecție de coduri.
+      </p>
+    </section>
+
+    <div style="height:1px;background:#dde1ee;margin:0 0 56px;"></div>
+
+    <!-- ══════════ SECȚIUNEA 2 · VIDEO ══════════ -->
+    <section style="animation:fadeInUp .4s ease;text-align:center;">
+      <div style="display:flex;align-items:baseline;gap:12px;margin-bottom:6px;justify-content:center;">
+        <span style="font-family:'Noto Sans Mono',monospace;font-size:0.72rem;letter-spacing:0.14em;text-transform:uppercase;color:#3b5bdb;">02 · Video</span>
+      </div>
+      <h2 style="font-size:1.5rem;font-weight:600;margin:0 0 6px;letter-spacing:-0.01em;">Comparație pe secvențe video</h2>
+      <p style="color:#6b7296;font-size:0.9rem;margin:0 0 26px;max-width:680px;line-height:1.6;margin-left:auto;margin-right:auto;">
+        Redare sincronă a tuturor metodelor. Folosește lupa pentru a inspecta detaliile la nivel de pixel; secvențele rulează în buclă și avansează automat.
+      </p>
+
+      <div id="vid-thumbs" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px;justify-content:center;"></div>
+      <div id="vid-dots"   style="display:flex;gap:6px;margin-bottom:18px;justify-content:center;"></div>
+
+      <!-- controale -->
+      <div style="display:flex;align-items:center;justify-content:center;gap:14px;margin-bottom:18px;flex-wrap:wrap;">
+        <div style="font-family:'Noto Sans Mono',monospace;font-size:0.75rem;color:#6b7296;">
+          rulare <span id="play-num" style="color:#3b5bdb;">1</span> / <span id="max-loops"></span>
+        </div>
+        <button id="btn-stop" class="ctrl-btn" onclick="toggleStop()">
+          <svg id="stop-icon" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="6" width="12" height="12" rx="1"></rect></svg>
+          <span id="stop-text">Stop</span>
+        </button>
+        <button id="btn-zoom" class="ctrl-btn" onclick="toggleZoom()">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"></circle><line x1="16.5" y1="16.5" x2="22" y2="22"></line><line x1="11" y1="8" x2="11" y2="14"></line><line x1="8" y1="11" x2="14" y2="11"></line></svg>
+          Lupă
+        </button>
+      </div>
+
+      <!-- rândul 1: referință & baseline -->
+      <!-- <div style="font-family:'Noto Sans Mono',monospace;font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;color:#6b7296;margin-bottom:6px;">Referință &amp; Baseline</div> -->
+      <div id="vid-headers-1" style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:6px;"></div>
+      <div id="vid-grid-1" data-vidgrid="1" style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;"></div>
+
+      <!-- divider între rânduri -->
+      <hr style="border:none;border-top:1px solid #dde1ee;margin:28px 0 22px;">
+
+      <!-- rândul 2: proprii & literatură -->
+      <div id="vid-headers-2" style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:6px;"></div>
+      <div id="vid-grid-2" data-vidgrid="1" style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;"></div>
+
+      <p style="margin-top:14px;font-family:'Noto Sans Mono',monospace;font-size:0.68rem;color:#6b7296;line-height:1.8;text-align:left;">
+        <sup>¹</sup> <b>Recurent, cadru-cu-cadru</b> — ConvGRU cu interpolare în spațiul latent (+ variantă cu Depthwise Separable Convolutions).<br>
+        <sup>²</sup> <b>Fereastră temporală (15 cadre)</b> — mecanism de atenție spațială în spațiul latent (+ variantă cu atenție temporală ulterior blocurilor Ref-CFT).
+      </p>
+
+      <!-- zoom strip -->
+      <div id="zoom-strip" style="display:none;grid-template-columns:repeat(5,1fr);gap:10px;margin-top:10px;"></div>
+
+    </section>
+
+  </main>
+</div>
+
+<!-- Lightbox overlay -->
+<div id="vid-lightbox" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(10,11,20,.88);backdrop-filter:blur(6px);align-items:center;justify-content:center;flex-direction:column;gap:14px;">
+  <div id="vid-lb-label" style="font-family:'Noto Sans Mono',monospace;font-size:0.85rem;letter-spacing:0.1em;text-transform:uppercase;color:#fff;"></div>
+  <div style="position:relative;max-width:90vw;max-height:80vh;">
+    <video id="vid-lb-video" muted playsinline style="max-width:90vw;max-height:80vh;border-radius:12px;display:block;box-shadow:0 8px 48px rgba(0,0,0,.6);"></video>
+    <img  id="vid-lb-img"   src=""  alt="" style="max-width:90vw;max-height:80vh;border-radius:12px;display:none;box-shadow:0 8px 48px rgba(0,0,0,.6);">
+  </div>
+  <div style="font-family:'Noto Sans Mono',monospace;font-size:0.7rem;color:#8892b0;">click oriunde sau Esc pentru a închide</div>
+</div>
+
+<script>
+// ─── CONFIGURARE ─────────────────────────────────────────────────────────────
+// Modifică aici pentru a adăuga metode sau a schimba căile
+const CFG = {
+  maxSamples:    50,
+  imageBase:     'static/images',
+  videoBase:     'static/videos/compare',
+  videoLoops:    3,
+  videoDuration: 5,      // secunde per redare
+  autoAdvance:   true,
+};
+
+// Metodele pentru slider-ul de imagini
+const LEFT_METHODS = {
+  lq:            { file: 'lq',         label: 'LQ',            color: '#748faf' },
+  codeformer: { file: 'codeformer', label: 'CodeFormer', color: '#d6621a' },
+};
+
+const RIGHT_METHODS = {
+  codeformer:     { file: 'codeformer',         label: 'CodeFormer',           color: '#d6621a' },
+  coderefformer1: { file: 'coderefformer_va',   label: 'CodeRefFormer Var. A', color: '#1971c2', proposed: true },
+  coderefformer2: { file: 'coderefformer_vapp', label: 'CodeRefFormer Var. A++',color: '#3b5bdb', proposed: true },
+  coderefformer3: { file: 'coderefformer_vb',   label: 'CodeRefFormer Var. B', color: '#6741d9', proposed: true },
+  instant_restore:{ file: 'instant_restore',    label: 'InstantRestore',       color: '#0ca678' },
+  refldm:         { file: 'refldm',             label: 'ReF-LDM',              color: '#ae3ec9' },
+};
+
+// Rândul 1: referință + baseline
+const VID_ROW1 = [
+  { file: 'ref.jpg',              isImage: true,  label: 'Ref',           color: '#7048e8' },
+  { file: 'lq.mp4',              isImage: false, label: 'LQ',            color: '#748faf' },
+  { file: 'codeformer.mp4',      isImage: false, label: 'CodeFormer',    color: '#d6621a' },
+  { file: 'coderefformer_va.mp4',isImage: false, label: 'CodeRefFormer', color: '#1971c2', proposed: true },
+  { file: 'hq.mp4',              isImage: false, label: 'HQ',            color: '#0ca678' },
+];
+
+// Rândul 2: proprii + literatură
+// ¹ recurrent cadru-cu-cadru  ² fereastră temporală (15 cadre)
+const VID_ROW2 = [
+  { file: 'keep.mp4',  isImage: false, label: 'KEEP',                       color: '#e03131' },
+  { file: 'var1.mp4',  isImage: false, label: 'ConvGRU+IL<sup>¹</sup>',     color: '#3b5bdb', proposed: true },
+  { file: 'var2.mp4',  isImage: false, label: 'ConvGRU+IL+DWS<sup>¹</sup>', color: '#6741d9', proposed: true },
+  { file: 'var3.mp4',  isImage: false, label: 'AtSp. Lat.<sup>²</sup>',      color: '#ae3ec9', proposed: true },
+  { file: 'var4.mp4',  isImage: false, label: 'AtSp. Lat.+DCD<sup>²</sup>', color: '#d6336c', proposed: true },
+];
+
+// ─── STARE ───────────────────────────────────────────────────────────────────
+let imgSample   = 0;
+let vidSample   = 0;
+let leftMethod  = 'lq';
+let rightMethod = 'coderefformer1';
+let isStopped   = false;
+let zoomActive  = false;
+let playNum     = 1;
+
+let _t = null, _adv = null, _fallback = null, _raf = null;
+let zoomPos = { rx: 0.5, ry: 0.5 };
+let zoomSources = [], zoomCanvases = [];
+
+// ─── INIȚIALIZARE ─────────────────────────────────────────────────────────────
+function probeImage(src) {
+  return new Promise(resolve => {
+    const img = new Image();
+    img.onload  = () => resolve(true);
+    img.onerror = () => resolve(false);
+    img.src = src;
+  });
+}
+
+async function detectImgSamples() {
+  const checks = Array.from({length: CFG.maxSamples}, (_, i) =>
+    probeImage(`${CFG.imageBase}/sample_${i+1}/hq.png`).then(ok => ok ? i+1 : null)
+  );
+  return (await Promise.all(checks)).filter(Boolean);
+}
+
+function probeVideo(src) {
+  return new Promise(resolve => {
+    const v = document.createElement('video');
+    v.preload = 'metadata';
+    v.onloadedmetadata = () => resolve(true);
+    v.onerror = () => resolve(false);
+    v.src = src;
+  });
+}
+
+async function detectVidSamples() {
+  const checks = Array.from({length: CFG.maxSamples}, (_, i) =>
+    probeVideo(`${CFG.videoBase}/sample_${i+1}/hq.mp4`).then(ok => ok ? i+1 : null)
+  );
+  return (await Promise.all(checks)).filter(Boolean);
+}
+
+document.addEventListener('DOMContentLoaded', async () => {
+  document.getElementById('zoom-strip').style.gridTemplateColumns = `repeat(${VID_ROW1.length + VID_ROW2.length},1fr)`;
+  document.getElementById('max-loops').textContent = CFG.videoLoops;
+
+  const [imgSamples, vidSamples] = await Promise.all([detectImgSamples(), detectVidSamples()]);
+
+  buildImgThumbs(imgSamples);
+  buildVidThumbs(vidSamples);
+  buildVidHeaders();
+  buildMethodBtns();
+  setImgSample(0);
+  if (vidSampleList.length > 0) setVidSample(0);
+  initSlider();
+});
+
+// ─── IMAGINI · THUMBS ────────────────────────────────────────────────────────
+let imgSampleList = [];  // indici reali detectați (1-based folder numbers)
+let vidSampleList = [];
+
+function buildImgThumbs(samples) {
+  imgSampleList = samples;
+  const wrap = document.getElementById('img-thumbs');
+  const dots = document.getElementById('img-dots');
+  samples.forEach((sampleNum, i) => {
+    const t = document.createElement('div');
+    t.className = 'thumb';
+    t.innerHTML = `<div class="thumb-bg"></div>
+      <img src="${CFG.imageBase}/sample_${sampleNum}/hq.png" alt="">
+      <div class="thumb-num">${sampleNum}</div>`;
+    t.onclick = () => setImgSample(i);
+    wrap.appendChild(t);
+    const d = document.createElement('div');
+    d.className = 'dot';
+    dots.appendChild(d);
+  });
+}
+
+function setImgSample(i) {
+  imgSample = i;
+  const sampleNum = imgSampleList[i];
+  const base = `${CFG.imageBase}/sample_${sampleNum}`;
+  document.getElementById('stack-ref').src = `${base}/ref.png`;
+  document.getElementById('stack-hq').src  = `${base}/hq.png`;
+  refreshSliderImgs();
+  highlightThumbs('img-thumbs', i);
+  highlightDots('img-dots', i);
+}
+
+// ─── IMAGINI · METODE ────────────────────────────────────────────────────────
+function buildMethodBtns() {
+  [['left', LEFT_METHODS], ['right', RIGHT_METHODS]].forEach(([side, methods]) => {
+    const wrap = document.getElementById(`${side}-btns`);
+    Object.entries(methods).forEach(([key, m]) => {
+      const btn = document.createElement('button');
+      btn.className = 'method-btn';
+      btn.dataset.key  = key;
+      btn.dataset.side = side;
+      btn.innerHTML = `<span style="width:8px;height:8px;border-radius:50%;background:${m.color};flex-shrink:0;"></span>
+        ${m.label}${m.proposed ? OURS_BADGE : ''}<span class="chk" style="color:#3b5bdb;font-weight:700;display:none;">✓</span>`;
+      btn.onclick = () => {
+        if (side === 'left') leftMethod = key; else rightMethod = key;
+        refreshSliderImgs();
+      };
+      wrap.appendChild(btn);
+    });
+  });
+  refreshMethodBtns();
+}
+
+function refreshMethodBtns() {
+  document.querySelectorAll('.method-btn').forEach(btn => {
+    const cur = btn.dataset.side === 'left' ? leftMethod : rightMethod;
+    const on  = btn.dataset.key === cur;
+    btn.classList.toggle('active', on);
+    btn.querySelector('.chk').style.display = on ? '' : 'none';
+  });
+  const lm = LEFT_METHODS[leftMethod];
+  const rm = RIGHT_METHODS[rightMethod];
+  document.getElementById('sl-left-lbl').textContent  = lm.label;
+  document.getElementById('sl-left-lbl').style.color  = lm.color;
+  document.getElementById('sl-right-lbl').textContent = rm.label;
+  document.getElementById('sl-right-lbl').style.color = rm.color;
+  document.getElementById('lbl-left').textContent  = '◀ ' + lm.label;
+  document.getElementById('lbl-right').textContent = rm.label + ' ▶';
+}
+
+function refreshSliderImgs() {
+  const base = `${CFG.imageBase}/sample_${imgSampleList[imgSample] ?? imgSample+1}`;
+  document.getElementById('sl-left').src  = `${base}/${LEFT_METHODS[leftMethod].file}.png`;
+  document.getElementById('sl-right').src = `${base}/${RIGHT_METHODS[rightMethod].file}.png`;
+  refreshMethodBtns();
+}
+
+// ─── IMAGINI · SLIDER ────────────────────────────────────────────────────────
+function initSlider() {
+  let following = false;
+  const slider = document.getElementById('slider');
+
+  slider.addEventListener('click', e => {
+    following = !following;
+    moveHandle(e);
+    if (following) {
+      window.addEventListener('mousemove', moveHandle);
+      slider.style.cursor = 'col-resize';
+    } else {
+      window.removeEventListener('mousemove', moveHandle);
+      slider.style.cursor = 'ew-resize';
+    }
+  });
+}
+
+function moveHandle(e) {
+  const r   = document.getElementById('slider').getBoundingClientRect();
+  const pct = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)) * 100;
+  document.getElementById('sl-overlay').style.clipPath = `inset(0 ${100-pct}% 0 0)`;
+  document.getElementById('sl-handle').style.left      = pct + '%';
+}
+
+// ─── VIDEO · THUMBS ──────────────────────────────────────────────────────────
+function buildVidThumbs(samples) {
+  vidSampleList = samples;
+  const wrap = document.getElementById('vid-thumbs');
+  const dots = document.getElementById('vid-dots');
+  for (let i = 0; i < vidSampleList.length; i++) {
+    const sampleNum = vidSampleList[i];
+    const t = document.createElement('div');
+    t.className = 'thumb';
+    t.innerHTML = `<div class="thumb-bg"></div>
+      <video src="${CFG.videoBase}/sample_${sampleNum}/hq.mp4#t=0.1" muted preload="metadata"></video>
+      <div class="thumb-num">${i+1}</div>`;
+    t.onclick = () => setVidSample(i);
+    wrap.appendChild(t);
+    const d = document.createElement('div');
+    d.className = 'dot';
+    dots.appendChild(d);
+  }
+}
+
+function setVidSample(i) {
+  vidSample = i;
+  isStopped = false;
+  syncStopBtn();
+  buildVidGrid(vidSampleList[i]);
+  highlightThumbs('vid-thumbs', i);
+  highlightDots('vid-dots', i);
+  startVideoGroup();
+  if (zoomActive) setTimeout(buildZoomStrip, 300);
+}
+
+// ─── VIDEO · GRILĂ ───────────────────────────────────────────────────────────
+function buildVidGrid(sampleNum) {
+  const base = `${CFG.videoBase}/sample_${sampleNum}`;
+  [[VID_ROW1, 'vid-grid-1'], [VID_ROW2, 'vid-grid-2']].forEach(([row, id]) => {
+    const grid = document.getElementById(id);
+    grid.innerHTML = '';
+    row.forEach(c => {
+      const cell = document.createElement('div');
+      cell.className = 'vid-cell';
+      cell.style.cursor = 'zoom-in';
+      const media = c.isImage
+        ? `<img src="${base}/${c.file}" alt="">`
+        : `<video src="${base}/${c.file}" muted playsinline preload="auto"></video>`;
+      cell.innerHTML = `<div class="vid-cell-media">${media}</div>`;
+      cell.addEventListener('click', () => openLightbox(c, base));
+      grid.appendChild(cell);
+    });
+  });
+}
+
+const OURS_BADGE = `<span style="display:inline-block;font-size:0.55rem;font-weight:700;letter-spacing:0.04em;background:#3b5bdb;color:#fff;border-radius:4px;padding:1px 5px;vertical-align:middle;margin-left:5px;text-transform:none;">★ Propus</span>`;
+
+function buildVidHeaders() {
+  const hdrStyle = `text-align:center;font-size:0.7rem;font-family:'Noto Sans Mono',monospace;
+    letter-spacing:0.07em;font-weight:500;text-transform:uppercase;padding:4px 0;`;
+  document.getElementById('vid-headers-1').innerHTML = VID_ROW1.map(c =>
+    `<div style="${hdrStyle}color:${c.color};">${c.label}${c.proposed ? OURS_BADGE : ''}</div>`).join('');
+  document.getElementById('vid-headers-2').innerHTML = VID_ROW2.map(c =>
+    `<div style="${hdrStyle}color:${c.color};">${c.label}${c.proposed ? OURS_BADGE : ''}</div>`).join('');
+}
+
+function buildVidLegend() {
+  const allCells = [...VID_ROW1, ...VID_ROW2];
+  document.getElementById('vid-legend').innerHTML = allCells.map(c =>
+    `<div style="display:flex;align-items:center;gap:7px;font-size:0.78rem;color:#6b7296;">
+      <span style="width:9px;height:9px;border-radius:50%;background:${c.color};flex-shrink:0;"></span>
+      <span><b style="color:${c.color};">${c.label}</b></span>
+    </div>`
+  ).join('');
+}
+
+// ─── VIDEO · REDARE ──────────────────────────────────────────────────────────
+function getVideos() {
+  return Array.from(document.querySelectorAll('[data-vidgrid] video'));
+}
+
+function clearTimers() {
+  clearTimeout(_t); clearTimeout(_adv); clearTimeout(_fallback);
+}
+
+function startVideoGroup() {
+  clearTimers();
+  playNum = 1;
+  document.getElementById('play-num').textContent = playNum;
+  const vids = getVideos();
+  if (!vids.length) return;
+  vids.forEach(v => { v.muted = true; v.pause(); try { v.currentTime = 0; } catch(_){} v.loop = false; });
+  let ready = 0;
+  const onReady = () => { if (++ready >= vids.length) playLoop(1); };
+  vids.forEach(v => {
+    if (v.readyState >= 3) onReady();
+    else { const h = () => { v.removeEventListener('canplay', h); onReady(); }; v.addEventListener('canplay', h); }
+  });
+  _fallback = setTimeout(() => { if (ready < vids.length) playLoop(1); }, 2000);
+}
+
+function playLoop(n) {
+  if (isStopped) return;
+  const vids = getVideos();
+  if (!vids.length) return;
+  playNum = n;
+  document.getElementById('play-num').textContent = n;
+  vids.forEach(v => { try { v.currentTime = 0; } catch(_){} });
+  clearTimers();
+  _t = setTimeout(() => {
+    if (isStopped) return;
+    vids.forEach(v => v.play().catch(() => {}));
+    _adv = setTimeout(() => {
+      if (n < CFG.videoLoops) {
+        playLoop(n + 1);
+      } else if (CFG.autoAdvance) {
+        const next = (vidSample + 1) % vidSampleList.length;
+        setTimeout(() => setVidSample(next), 300);
+      }
+    }, CFG.videoDuration * 1000 + 200);
+  }, 60);
+}
+
+function toggleStop() {
+  isStopped = !isStopped;
+  syncStopBtn();
+  if (isStopped) {
+    clearTimers();
+    getVideos().forEach(v => v.pause());
+  } else {
+    playLoop(playNum || 1);
+  }
+}
+
+function syncStopBtn() {
+  const btn  = document.getElementById('btn-stop');
+  const icon = document.getElementById('stop-icon');
+  const text = document.getElementById('stop-text');
+  if (isStopped) {
+    btn.classList.add('on');
+    icon.innerHTML = '<polygon points="6,4 20,12 6,20" fill="currentColor"></polygon>';
+    text.textContent = 'Play';
+  } else {
+    btn.classList.remove('on');
+    icon.innerHTML = '<rect x="6" y="6" width="12" height="12" rx="1"></rect>';
+    text.textContent = 'Stop';
+  }
+}
+
+// ─── ZOOM / LUPĂ ─────────────────────────────────────────────────────────────
+function toggleZoom() {
+  zoomActive = !zoomActive;
+  document.getElementById('btn-zoom').classList.toggle('on', zoomActive);
+  document.body.classList.toggle('zoom-on', zoomActive);
+  const strip = document.getElementById('zoom-strip');
+  if (zoomActive) {
+    buildZoomStrip();
+    strip.style.display = 'grid';
+    document.addEventListener('mousemove', onZoomMove);
+    _raf = requestAnimationFrame(rafDraw);
+  } else {
+    strip.style.display = 'none';
+    strip.innerHTML = '';
+    document.removeEventListener('mousemove', onZoomMove);
+    cancelAnimationFrame(_raf);
+    zoomSources = []; zoomCanvases = [];
+  }
+}
+
+function buildZoomStrip() {
+  const strip = document.getElementById('zoom-strip');
+  strip.innerHTML = '';
+  zoomSources = []; zoomCanvases = [];
+  Array.from(document.querySelectorAll('[data-vidgrid] video, [data-vidgrid] img')).forEach((el, i) => {
+    const allCells = [...VID_ROW1, ...VID_ROW2];
+  const c   = allCells[i] || { label: '', color: '#6b7296' };
+    const div = document.createElement('div');
+    div.style.cssText = 'display:flex;flex-direction:column;background:#fff;border-radius:10px;overflow:hidden;border:1px solid #3b5bdb;';
+    const cv  = document.createElement('canvas');
+    cv.style.cssText  = 'width:100%;aspect-ratio:1/1;display:block;';
+    const lbl = document.createElement('div');
+    lbl.style.cssText = `font-family:'Noto Sans Mono',monospace;font-size:0.7rem;text-align:center;padding:6px 4px 7px;color:${c.color};background:#f0f2f8;border-top:1px solid #dde1ee;`;
+    lbl.textContent   = c.label;
+    div.appendChild(cv); div.appendChild(lbl);
+    strip.appendChild(div);
+    zoomSources.push(el); zoomCanvases.push(cv);
+  });
+}
+
+function onZoomMove(e) {
+  // Try to match an exact media element first (for precise coords)
+  for (const el of document.querySelectorAll('[data-vidgrid] video, [data-vidgrid] img')) {
+    const r = el.getBoundingClientRect();
+    if (e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom) {
+      zoomPos = { rx: (e.clientX - r.left) / r.width, ry: (e.clientY - r.top) / r.height };
+      return;
+    }
+  }
+  // Fallback: if hovering anywhere over a vidgrid row, interpolate using the row bounds
+  for (const grid of document.querySelectorAll('[data-vidgrid]')) {
+    const r = grid.getBoundingClientRect();
+    if (e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom) {
+      zoomPos = { rx: (e.clientX - r.left) / r.width, ry: (e.clientY - r.top) / r.height };
+      return;
+    }
+  }
+}
+
+function rafDraw() {
+  if (!zoomActive) return;
+  const ZOOM = 2, dpr = window.devicePixelRatio || 1;
+  zoomSources.forEach((el, i) => {
+    const cv = zoomCanvases[i];
+    if (!cv) return;
+    const w = cv.parentElement.clientWidth || 120;
+    if (cv.width !== w * dpr) { cv.width = w * dpr; cv.height = w * dpr; }
+    const ctx  = cv.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const nw = el.videoWidth  || el.naturalWidth  || 512;
+    const nh = el.videoHeight || el.naturalHeight || 512;
+    const sw = nw / ZOOM, sh = nh / ZOOM;
+    const sx = Math.max(0, Math.min(zoomPos.rx * nw - sw / 2, nw - sw));
+    const sy = Math.max(0, Math.min(zoomPos.ry * nh - sh / 2, nh - sh));
+    ctx.clearRect(0, 0, w, w);
+    try { ctx.drawImage(el, sx, sy, sw, sh, 0, 0, w, w); } catch(_) {}
+  });
+  _raf = requestAnimationFrame(rafDraw);
+}
+
+// ─── LIGHTBOX ────────────────────────────────────────────────────────────────
+function openLightbox(cellCfg, base) {
+  const lb    = document.getElementById('vid-lightbox');
+  const lbVid = document.getElementById('vid-lb-video');
+  const lbImg = document.getElementById('vid-lb-img');
+  const lbLbl = document.getElementById('vid-lb-label');
+
+  lbLbl.textContent  = cellCfg.label.replace(/<[^>]+>/g, '');
+  lbLbl.style.color  = cellCfg.color;
+
+  if (cellCfg.isImage) {
+    lbImg.src          = `${base}/${cellCfg.file}`;
+    lbImg.style.display   = 'block';
+    lbVid.style.display   = 'none';
+    lbVid.src = '';
+  } else {
+    // sync currentTime cu primul video din grilă
+    const ref = document.querySelector('[data-vidgrid] video');
+    const t   = ref ? ref.currentTime : 0;
+    lbVid.src          = `${base}/${cellCfg.file}`;
+    lbVid.style.display   = 'block';
+    lbImg.style.display   = 'none';
+    lbVid.currentTime  = t;
+    lbVid.play().catch(() => {});
+  }
+
+  lb.style.display = 'flex';
+  document.addEventListener('keydown', onLbKey);
+}
+
+function closeLightbox() {
+  const lb    = document.getElementById('vid-lightbox');
+  const lbVid = document.getElementById('vid-lb-video');
+  lb.style.display = 'none';
+  lbVid.pause();
+  lbVid.src = '';
+  document.removeEventListener('keydown', onLbKey);
+}
+
+function onLbKey(e) { if (e.key === 'Escape') closeLightbox(); }
+
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('vid-lightbox').addEventListener('click', e => {
+    if (e.target === document.getElementById('vid-lightbox')) closeLightbox();
+  });
+});
+
+// ─── HELPERS ─────────────────────────────────────────────────────────────────
+function highlightThumbs(id, active) {
+  document.querySelectorAll(`#${id} .thumb`).forEach((t, i) => t.classList.toggle('active', i === active));
+}
+function highlightDots(id, active) {
+  document.querySelectorAll(`#${id} .dot`).forEach((d, i) => d.classList.toggle('active', i === active));
+}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,382 @@
+# basic configs
+scale: 1
+manual_seed: 0
+verbose: true
+gt_bit_depth: 8
+
+# dataset configs
+dataset:
+  degradation:
+    type: Synth
+    sigma: 1.5
+
+  train:
+    name: CelebV-Ref_train
+    gt_dir: ~
+    lr_dir: ~
+    video: true
+    tempo_extent: 10
+    data_type: rgb
+    batch_size: 4
+    num_workers: 0
+    pin_memory: true
+    conditional: true  # use reference image as conditioning for model training
+    load_reference: true  # load reference image for ID loss
+    num_references: 5
+    ref_augment: false
+    ref_conds_path: ~
+
+    # GT latents
+    latent_gt_path: external_utils/CodeFormer/latent_gt_code1024.pth
+
+    # One-step degradation  # Hard
+    final_sinc_prob: 0.0 # 0.3
+    sharpen_gt_prob: 0
+    first_degradation:
+      blur_prob: 1  # 1
+      blur_kernel_size: 21
+      resize_prob: [0.0, 1.0, 0.0]  # up, down, keep
+      resize_range: [0.1, 1]  # Downscale between x1 and x10
+      kernel_list: ['iso', 'aniso']
+      kernel_prob: [0.5, 0.5]
+      sinc_prob: 0.0  # 0.1
+      blur_sigma: [0, 16]
+      betag_range: [0.5, 4]
+      betap_range: [1, 2]
+      gaussian_noise_prob: 0.4  # 0.4
+      poisson_noise_prob: 0.4  # 0.4
+      noise_range: [0, 20]
+      poisson_scale_range: [0.05, 3]
+      gray_noise_prob: 0.4 # 0.4
+      
+      # CRF 
+      crf_prob: 1.0
+      crf_range: [25, 45]
+      crf_codecs: ['libx264', 'h264']   # optional
+      crf_codec_probs: [0.5, 0.5]
+
+  # test_mild:
+  #   name: CelebV-Ref_Val_mild
+  #   gt_dir: D:/idpfvsr/datasets/CelebV-Ref_splits/val/gt
+  #   lr_dir: D:/idpfvsr/datasets/CelebV-Ref_splits/val/lq_mild # HQ and LQ in the same folder
+  #   video: true
+  #   batch_size: 1
+  #   load_reference: true
+  #   num_references: 0  # Use all available references 
+  #   data_type: rgb
+  #   num_workers: 0
+  #   pin_memory: true
+
+  # test_medium:
+  #   name: CelebV-Ref_Val_medium
+  #   gt_dir: D:/idpfvsr/datasets/CelebV-Ref_splits/val/gt
+  #   lr_dir: D:/idpfvsr/datasets/CelebV-Ref_splits/val/lq_medium # HQ and LQ in the same folder
+  #   video: true
+  #   batch_size: 1
+  #   load_reference: true
+  #   num_references: 0  # Use all available references 
+  #   data_type: rgb
+  #   num_workers: 0
+  #   pin_memory: true
+
+  # test_heavy:
+  #   name: CelebV-Ref_Val_heavy
+  #   gt_dir: D:/idpfvsr/datasets/CelebV-Ref_splits/val/gt
+  #   lr_dir: D:/idpfvsr/datasets/CelebV-Ref_splits/val/lq_heavy # HQ and LQ in the same folder
+  #   video: true
+  #   batch_size: 1
+  #   load_reference: true
+  #   num_references: 0  # Use all available references 
+  #   data_type: rgb
+  #   num_workers: 0
+  #   pin_memory: true
+
+  # test_mild:
+  #   name: CelebV-Ref_Test_mild
+  #   gt_dir: D:/idpfvsr/datasets/CelebV-Ref_splits/test/gt
+  #   lr_dir: D:/idpfvsr/datasets/CelebV-Ref_splits/test/lq_mild # HQ and LQ in the same folder
+  #   video: true
+  #   batch_size: 1
+  #   load_reference: true
+  #   num_references: 0  # Use all available references 
+  #   data_type: rgb
+  #   num_workers: 0
+  #   pin_memory: true
+
+  # test_medium:
+  #   name: CelebV-Ref_Test_medium
+  #   gt_dir: D:/idpfvsr/datasets/CelebV-Ref_splits/test/gt
+  #   lr_dir: D:/idpfvsr/datasets/CelebV-Ref_splits/test/lq_medium # HQ and LQ in the same folder
+  #   video: true
+  #   batch_size: 1
+  #   load_reference: true
+  #   num_references: 0  # Use all available references 
+  #   data_type: rgb
+  #   num_workers: 0
+  #   pin_memory: true
+
+  test_heavy:
+    name: CelebV-Ref_Test_heavy
+    gt_dir: D:/idpfvsr/datasets/CelebV-Ref_splits/test/gt
+    lr_dir: D:/idpfvsr/datasets/CelebV-Ref_splits/test/lq_heavy # HQ and LQ in the same folder
+    video: true
+    batch_size: 1
+    load_reference: true
+    num_references: 0  # Use all available references 
+    data_type: rgb
+    num_workers: 0
+    pin_memory: true
+
+    
+# model configs
+model:
+  name: CodeFormerVSR  # Model name: ISR (Image Super-Resolution) / VSR (Video Super-Resolution), etc.
+  sequential_refs: true
+
+  generator:
+    # Check type and backbone
+    backbone_type: CodeFormer
+
+    # Backbone configuration
+    backbone_cfg:
+      dim_embd: 512
+      n_head: 8
+      n_layers: 9
+      codebook_size: 1024
+      connect_list: ['32', '64', '128', '256']    
+      strict_load: false
+      conditional: false
+      return_ref_kv: false
+      w_scale: 1 
+
+      # SFT fusion type: 'se' or 'attention'
+      ref_sft: true
+      adain_ref: false
+      adain_per_head: false
+      sft_fusion_type: 'se'  # 'se' or 'attention'
+
+      # PCD deformable alignment — requires sft_fusion_type: 'se' or 'attention'
+      use_deformable: false
+      deformable_groups: 8
+
+      # Patch cross-attention — applied after SFT at specified resolutions
+      use_patch_attn: false
+      patch_attn_list: ['64', '128', '256']   # resolutions where patch attn is applied
+      patch_attn_radius: 3                    # window radius → 7x7 window
+      patch_attn_nhead: 4
+      backbone_path: external_utils\CodeFormer\codeformer.pth
+    
+    # --- Temporal module ---
+    emb_dim: 256                 # VQGAN latent channels
+    hidden_dim: 64               # ConvGRU hidden-state channels
+    use_flow: true               # warp prev_out via SpyNet to compute z_prior
+    flownet_path: external_utils/optical_flow/spynet_basicsr.pth
+
+    # --- Cross-Frame Attention (CFA) ---
+    # Scales at which CFA is injected into the generator decoder.
+    # cfa_list: ['16', '32']
+    cfa_list: []
+    cfa_nhead: 4
+
+    # Embedding encoders (needed for online embedding extraction)
+    farl_path: ~
+    id_network_path: ~
+    # farl_path: external_utils/FaRL-Base-Patch16-LAIONFace20M-ep64.pth
+    # id_network_path: external_utils/webface_r50.onnx
+
+  discriminator:
+    in_channels: 3
+    nf: 32
+    use_sigmoid: False
+
+  network_vqgan: # this config is needed if no pre-calculated latent
+    img_size: 512
+    nf: 64
+    ch_mult: [1, 2, 2, 4, 4, 8]
+    quantizer: 'nearest'
+    codebook_size: 1024
+    load_path: external_utils/CodeFormer/vqgan_code1024.pth
+
+  # Checkpoints paths
+  g_name: SingleFrameVideoVSR
+  d_name: VQGANDiscriminator3D
+  
+  # g_load_path: experiments/coderefformer_v1_5_refs_se_sft_init_460K/train/ckpt/G_iter120000.pth
+  g_load_path: external_utils\CodeFormer\codeformer.pth
+  d_load_path: ~
+
+# training configs
+train:
+  # CodeFormer related
+  use_hq_feat_loss: true
+  feat_loss_weight: 1.0
+  cross_entropy_loss: true
+  entropy_loss_weight: 0.5
+  use_adaptive_weight: false
+  scale_adaptive_gan_weight: 1.0
+
+  # Iterations config
+  accum_steps: 1
+  start_iter: 0
+  total_iter: 50000
+  ema_decay: 0.997
+
+  # For V1
+  warmup:
+    modules:
+      # FIX - permanent freeze
+      backbone.encoder:
+        mode: fix
+      backbone.quantize:
+        mode: fix
+      backbone.generator:
+        mode: fix
+      backbone.ft_layers:
+        mode: fix
+      backbone.feat_emb:
+        mode: fix
+      backbone.idx_pred_layer:
+        mode: fix
+      backbone.position_emb:
+        mode: fix
+      flownet:
+        mode: fix
+      backbone.fuse_convs_dict:
+        mode: fix
+      hq_encoder:
+        mode: fix
+
+      # Warmup modules
+      # gru_cell:
+      #   mode: warmup
+      #   iters: 1000
+      # blend_net:
+      #   mode: warmup
+      #   iters: 1000
+      # cfa:
+      #   mode: warmup
+      #   iters: 1000
+
+  # configs for generator
+  generator:
+    lr: !!float 1e-5
+    lr_schedule:
+      # type: FixedLR
+      type: MultiStepLR
+      milestones: [250000, 500000]
+      gamma: 0.5
+    beta1: 0.9
+    beta2: 0.999
+
+  discriminator:
+    update_policy: adaptive
+    update_threshold: 0.4
+    crop_border_ratio: 0.75
+    lr: !!float 1e-5
+    lr_schedule:
+      # type: FixedLR
+      type: MultiStepLR
+      milestones: [250000, 500000]
+      gamma: 0.5
+    beta1: 0.9
+    beta2: 0.99
+    n_critic: 1
+
+  # criterions
+  # pixel-wise criterion
+  # pixel_crit:
+  #   type: CB
+  #   weight: 1
+  #   reduction: mean
+
+  # feature_crit:
+  #   type: LPIPS
+  #   weight: 1
+  #   use_input_norm: true
+  #   use_range_norm: true
+
+  # # identity criterion(s)
+  # id_crit:
+  #   type: CosineSimilarity
+  #   weight: 1.0
+  #   reduction: mean
+  #   hard_loss: true  # Whether to add the cosine term between the prediction's ID embedding and the reference id embedding
+  #   id_network_path: external_utils/webface_r50.onnx
+  #   id_embeddings_file: D:\idpfvsr\datasets\FFHQ\no_ref/downscaled_x2/FFHQ_id_embeddings_512_arcface50.pt
+
+  # # identity criterion
+  # sigma_id_crit:
+  #   weight: 1.0
+
+  # roi criterion(s) (used for eyes and mouth)
+  # facial_comp_crit:
+  #   type: CB
+  #   weight: 0.5
+  #   hard_loss: false # Whether to add the LPIPS term between 
+  #   reduction: mean
+
+  # facial_roi:
+  #   enlarge_eye: [1.5, 1.5]
+  #   enlarge_mouth: [1.2, 1.2]
+  #   eye_size: 100
+  #   mouth_size: 100
+  #   face_ratio: 1.0
+
+  # temporal criterion
+  # temporal_crit:
+  #   type: MSE
+  #   reduction: mean
+
+  # # gan loss
+  # gan_crit:
+  #   type: WGAN_SoftPlus
+  #   weight: !!float 0.1
+  #   # r1 regularization for discriminator
+  #   r1_reg_weight: 0
+  #   net_d_iters: 1
+  #   net_d_init_iters: 0
+  #   net_d_reg_every: 16
+  #   net_d_start_iters: 0
+
+# validation configs
+test:
+  test_freq: 10000
+
+  # whether to save the generated SR results
+  save_res: true
+  res_dir: ~   # use default dir
+
+  # whether to save the test results in a json file
+  save_json: true
+  json_dir: ~  # use default dir
+
+  padding_mode: reflect
+  num_pad_front: 0
+
+
+# metric configs
+metric:
+  # ID-based metrics
+  IDS:  # cosine similarity between HR and GT identity features (ArcFace)
+    id_network_path: external_utils/webface_r50.onnx
+    mult: 1.0
+
+  # TODO: sigma IDS
+  Sigma_IDS:
+    id_network_path: external_utils/webface_r50.onnx
+    mult: 1.0
+
+  # Ewarp
+  EWarp:
+    mult: 1.0
+
+  # CLIP-IQA
+  CLIPIQA:  # cosine similarity between HR and GT identity features (ArcFace)
+    mult: 1.0
+    
+# logger configs
+logger:
+  tb_freq: 1000
+  log_freq: 20
+  decay: 0.99
+  ckpt_freq: 10000

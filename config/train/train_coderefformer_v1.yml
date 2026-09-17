@@ -1,0 +1,442 @@
+# basic configs
+scale: 1
+manual_seed: 0
+verbose: true
+gt_bit_depth: 8
+
+# dataset configs
+dataset:
+  degradation:
+    type: Synth
+    sigma: 1.5
+
+  train:
+    name: FFHQRef_train
+    gt_dir: D:\idpfvsr\datasets\FFHQ-Ref\downscaled_x2\train/hq
+    lr_dir: ~
+    filter_file: ~
+    data_type: rgb
+    batch_size: 1
+    num_workers: 0
+    pin_memory: true
+    conditional: true  # use reference image as conditioning for model training
+    load_reference: true  # load reference image for ID loss
+    num_references: 5
+    ref_augment: true
+    ref_conds_path: ~
+    # id_embeddings_path: ~
+    id_embeddings_path: D:\idpfvsr\datasets\FFHQ\no_ref\downscaled_x2/FFHQ_id_embeddings_512_arcface50.pt
+    farl_embeddings_path: ~
+    facial_components_path: ~
+    # facial_components_path: /home/alex/Datasets/FFHQ-Ref/downscaled_x2/FFHQ_eye_mouth_landmarks_512.pth
+
+    # GT latents
+    latent_gt_path: external_utils/CodeFormer/latent_gt_code1024.pth
+
+    degradation:
+      type: Synth
+      sigma: 1.5
+
+    # One-step degradation  # Hard
+    final_sinc_prob: 0.0 # 0.3
+    sharpen_gt_prob: 0
+    first_degradation:
+      blur_prob: 1  # 1
+      blur_kernel_size: 41
+      resize_prob: [0.0, 0.9, 0.1]  # up, down, keep
+      resize_range: [0.03125, 1]
+      kernel_list: ['iso', 'aniso']
+      kernel_prob: [0.5, 0.5]
+      sinc_prob: 0.0  # 0.1
+      blur_sigma: [0, 16]
+      betag_range: [0.5, 4]
+      betap_range: [1, 2]
+      gaussian_noise_prob: 0.4  # 0.4
+      poisson_noise_prob: 0.4  # 0.4
+      noise_range: [0, 20]
+      poisson_scale_range: [0.05, 3]
+      gray_noise_prob: 0.4 # 0.4
+      jpeg_prob: 1.0 # 0.8
+      jpeg_range: [30, 100]
+    
+    # # One-step degradation  # Easy
+    # final_sinc_prob: 0.0 # 0.3
+    # sharpen_gt_prob: 0
+    # first_degradation:
+    #   blur_prob: 1  # 1
+    #   blur_kernel_size: 41
+    #   resize_prob: [0.0, 1.0, 0.0]  # up, down, keep
+    #   resize_range: [0.0833, 1]
+    #   kernel_list: ['iso', 'aniso']
+    #   kernel_prob: [0.5, 0.5]
+    #   sinc_prob: 0.0  # 0.1
+    #   blur_sigma: [0.1, 10]
+    #   betag_range: [0.5, 4]
+    #   betap_range: [1, 2]
+    #   gaussian_noise_prob: 0.4  # 0.4
+    #   poisson_noise_prob: 0.4  # 0.4
+    #   noise_range: [0, 15]
+    #   poisson_scale_range: [0.05, 3]
+    #   gray_noise_prob: 0.4 # 0.4
+    #   jpeg_prob: 1.0 # 0.8
+    #   jpeg_range: [60, 100]
+
+    # # Two-stage degradation
+    # first_degradation:
+    #   blur_prob: 1  # 1
+    #   resize_prob: [0.2, 0.7, 0.1]  # up, down, keep
+    #   resize_range: [0.1, 2]
+    #   kernel_list: ['iso', 'aniso', 'generalized_iso', 'generalized_aniso', 'plateau_iso', 'plateau_aniso']
+    #   kernel_prob: [0.45, 0.25, 0.12, 0.03, 0.12, 0.03]
+    #   sinc_prob: 0.1  # 0.1
+    #   blur_sigma: [0.2, 3]
+    #   betag_range: [0.5, 4]
+    #   betap_range: [1, 2]
+    #   gaussian_noise_prob: 0.4  # 0.4
+    #   poisson_noise_prob: 0.4  # 0.4
+    #   noise_range: [1, 30]
+    #   poisson_scale_range: [0.05, 3]
+    #   gray_noise_prob: 0.4 # 0.4
+    #   jpeg_prob: 1.0 # 0.8
+    #   jpeg_range: [30, 95]
+
+    # second_degradation:
+    #   blur_prob: 0.8  # 0.6
+    #   resize_prob: [0.2, 0.6, 0.2]  # up, down, keep
+    #   resize_range: [0.1, 1.2]
+    #   kernel_list: ['iso', 'aniso', 'generalized_iso', 'generalized_aniso', 'plateau_iso', 'plateau_aniso']
+    #   kernel_prob: [0.45, 0.25, 0.12, 0.03, 0.12, 0.03]
+    #   sinc_prob: 0.1 # 0.1
+    #   blur_sigma: [0.2, 1.5]
+    #   betag_range: [0.5, 4]
+    #   betap_range: [1, 2]
+    #   gaussian_noise_prob: 0.4  # 0.4
+    #   poisson_noise_prob: 0.4  # 0.4
+    #   noise_range: [1, 25]
+    #   poisson_scale_range: [0.05, 2.5]
+    #   gray_noise_prob: 0.4 # 0.4
+    #   jpeg_prob: 1.0 # 0.4
+    #   jpeg_range: [30, 95]
+
+  test_moderate:
+    name: FFHQ-NoRef_moderate
+    gt_dir: D:\idpfvsr\datasets\FFHQ-Ref\downscaled_x2/val/hq
+    lr_dir: D:\idpfvsr\datasets\FFHQ-Ref\downscaled_x2/val/lq/moderate
+    batch_size: 1
+    conditional: true
+    load_reference: true
+    num_references: 5  # Use all available references 
+    # id_embeddings_path: D:\idpfvsr\datasets\FFHQ\no_ref\downscaled_x2/FFHQ_id_embeddings_512_arcface50.pt
+    id_embeddings_path: ~
+    farl_embeddings_path: ~
+    facial_components_path: ~
+    # facial_components_path: /home/alex/Datasets/FFHQ-Ref/downscaled_x2/FFHQ_eye_mouth_landmarks_512.pth
+    filter_file: ~
+    data_type: rgb
+    num_workers: 0
+    pin_memory: true
+  
+  # test_severe:
+  #   name: FFHQ-NoRef_severe
+  #   gt_dir: /home/alex/Datasets/FFHQ-Ref/downscaled_x2/val/hq
+  #   lr_dir: /home/alex/Datasets/FFHQ-Ref/downscaled_x2/val/lq/severe
+  #   batch_size: 1
+  #   conditional: true
+  #   load_reference: true
+  #   num_references: -1  # Use all available references 
+  #   id_embeddings_path: /home/alex/Datasets/FFHQ-Ref/downscaled_x2/test/FFHQ_id_embeddings_512_test.pt
+  #   farl_embeddings_path: /home/alex/Datasets/FFHQ-Ref/downscaled_x2/test/FFHQ_farl_embeddings_512_test.pt
+  #   filter_file: ~
+  #   data_type: rgb
+  #   num_workers: 0
+  #   pin_memory: true
+  
+  # test_celeba:
+  #   name: CelebA-Ref-Test
+  #   gt_dir: D:\idpfvsr\datasets\CelebA-Test-Ref\celeba_test_split\test/hq
+  #   lr_dir: D:\idpfvsr\datasets\CelebA-Test-Ref\celeba_test_split\test/lq
+  #   batch_size: 2
+  #   conditional: true
+  #   load_reference: true
+  #   num_references: 5  # Use all available references 
+  #   id_embeddings_path: D:\idpfvsr\datasets\CelebA-Test-Ref/celeba_test_ref_id_embeddings_512_arcface50.pt
+  #   # id_embeddings_path: /home/alex/Datasets/CelebA-Test-Ref/test/CelebA-Test-Ref_id_embeddings_test.pt
+  #   # farl_embeddings_path: /home/alex/Datasets/CelebA-Test-Ref/test/CelebA-Test-Ref_farl_embeddings_test.pt
+  #   # facial_components_path: D:\idpfvsr\datasets\FFHQ\no_ref/downscaled_x2/FFHQ_eye_mouth_landmarks_512.pth
+  #   filter_file: ~
+  #   data_type: rgb
+  #   num_workers: 0
+  #   pin_memory: true
+
+# model configs
+model:
+  name: CodeRefFormer  # Model name: ISR (Image Super-Resolution) / VSR (Video Super-Resolution), etc.
+
+  generator:
+    dim_embd: 512
+    n_head: 8
+    n_layers: 9
+    codebook_size: 1024
+    connect_list: ['32', '64', '128', '256']    
+    strict_load: false
+    conditional: true
+    return_ref_kv: false
+    w_scale: 1 
+
+    # SFT fusion type: 'se' or 'attention'
+    adain_ref: false
+    adain_per_head: false
+    sft_fusion_type: 'se'  # 'se' or 'attention'
+    
+    # PCD deformable alignment — requires sft_fusion_type: 'se' or 'attention'
+    use_deformable: false
+    deformable_groups: 8
+
+    # Patch cross-attention — applied after SFT at specified resolutions
+    use_patch_attn: false
+    patch_attn_list: ['64', '128', '256']   # resolutions where patch attn is applied
+    patch_attn_radius: 3                    # window radius → 7x7 window
+    patch_attn_nhead: 4
+
+  discriminator:
+    nc: 3
+    ndf: 64
+    n_layers: 4
+
+  # Pre-trained HQ VQ-VAE
+  network_vqgan: # this config is needed if no pre-calculated latent
+    img_size: 512
+    nf: 64
+    ch_mult: [1, 2, 2, 4, 4, 8]
+    quantizer: 'nearest'
+    codebook_size: 1024
+    load_path: external_utils/CodeFormer/vqgan_code1024.pth
+
+  # Checkpoints paths
+  g_name: CodeRefFormer_V1 
+  d_name: VQGANDiscriminator
+  
+  # Simple CodeFormer
+  g_load_path: external_utils/CodeFormer/codeformer.pth
+  # g_load_path: experiments\coderefformer_v1_3_refs_se_sft\train\ckpt\G_iter75000.pth
+  d_load_path: external_utils/CodeFormer/vqgan_discriminator.pth
+  
+  # CodeRefFormer v1
+  # g_load_path: experiments/coderefformer_v1_one_step_degrade_b1_ref1_wgan_r1_0_01_hard_id_loss_continue/train/ckpt/G_iter460000.pth
+  # d_load_path: experiments/coderefformer_v1_one_step_degrade_b1_ref1_wgan_r1_0_01_hard_id_loss_continue/train/ckpt/D_iter460000.pth
+
+# training configs
+train:
+  # CodeFormer Codebook related losses
+  use_hq_feat_loss: false
+  feat_loss_weight: 1.0
+  cross_entropy_loss: false
+  entropy_loss_weight: 0.5
+  use_adaptive_weight: true
+  scale_adaptive_gan_weight: 0.5
+
+  # Iterations config
+  accum_steps: 4
+  tempo_extent: 1
+  start_iter: 0
+  total_iter: 125000  # Using 4 accumulation steps
+  ema_decay: 0.997
+
+  # For V1
+  warmup:
+    modules:
+      # FIX - permanent freeze
+      encoder:  # TODO: check this pls (?)
+        mode: fix
+      quantize:
+        mode: fix
+      generator:
+        mode: fix
+
+      # Sequence Transformer - do not finetune them
+      ft_layers:
+        mode: fix
+      feat_emb:
+        mode: fix
+      idx_pred_layer:
+        mode: fix
+      position_emb:
+        mode: fix
+
+      # # HQ encoder (needed in single image ?)
+      # hq_encoder: 
+      #   mode: fix
+
+      # Warmup — only these layers are training
+      # '*pcd_align*':           # matches all submodules containing 'pcd_align'
+      #   mode: warmup
+      #   iters: 500
+      # '*id_enc*':
+      #   mode: warmup
+      #   iters: 200
+      # '*ref_fusion*':
+      #   mode: warmup
+      #   iters: 200
+
+      # Freeze — these layers are frozen
+      # ft_layers:
+      #   mode: freeze
+      #   iters: 3000
+
+  # configs for generator
+  generator:
+    lr: !!float 1e-4
+    lr_schedule:
+      # type: FixedLR
+      type: MultiStepLR
+      milestones: [250000, 500000]
+      gamma: 0.5
+    beta1: 0.9
+    beta2: 0.999
+
+  discriminator:
+    update_policy: adaptive
+    update_threshold: 0.4
+    crop_border_ratio: 0.75
+    lr: !!float 1e-5
+    lr_schedule:
+      # type: FixedLR
+      type: MultiStepLR
+      milestones: [250000, 500000]
+      gamma: 0.5
+    beta1: 0.9
+    beta2: 0.99
+    n_critic: 1
+
+  # criterions
+  # pixel-wise criterion
+  pixel_crit:
+    type: CB
+    weight: 1
+    reduction: mean
+
+  # perceptual criterion  # TODO: replace with LPIPS from CodeFormer
+  # feature_crit:
+  #   type: WeightedLPIPS
+  #   base_loss_type: L1
+  #   weight: 0.01
+  #   reduction: mean
+  #   feature_layers: [2, 7, 16, 25, 34]  # "conv1_2", "conv2_2", "conv3_4", "conv4_4", "conv5_4" - before ReLU
+  #   feature_weights: [0.1, 0.1, 1, 1, 1]
+
+  feature_crit:
+    type: LPIPS
+    weight: 1
+    use_input_norm: true
+    use_range_norm: true
+
+  # identity criterion
+  id_crit:
+    type: CosineSimilarity
+    weight: 0.1
+    reduction: mean
+    hard_loss: true  # Whether to add the cosine term between the prediction's ID embedding and the reference id embedding
+    id_network_path: external_utils/webface_r50.onnx
+    id_embeddings_file: ~
+
+  # # roi criterion (used for eyes and mouth)
+  # facial_comp_crit:
+  #   type: L1
+  #   weight: 1.0
+  #   hard_loss: false # Whether to add the LPIPS term between 
+  #   reduction: mean
+  #   enlarge_eye: [1.5, 1.5]
+  #   enlarge_mouth: [1.2, 1.2]
+  #   eye_size: 80
+  #   mouth_size: 120
+  #   face_ratio: 1.0
+  #   feature_layers: [2, 7, 16, 25, 34]
+  #   feature_weights: [0.1, 0.1, 1, 1, 1]
+
+  # gan loss
+  # gan_crit:
+  #   type: WGAN_SoftPlus
+  #   weight: !!float 1e-1
+  #   # r1 regularization for discriminator
+  #   r1_reg_weight: 10
+  #   net_d_iters: 1
+  #   net_d_init_iters: 0
+  #   net_d_start_iters: 5001  # Warming up iterations
+  #   net_d_reg_every: 16
+
+  gan_crit:
+    type: WGAN_SoftPlus
+    # type: HingeGAN
+    weight: !!float 0.5
+    # r1 regularization for discriminator
+    r1_reg_weight: 0.01
+    net_d_iters: 1
+    net_d_init_iters: 0
+    net_d_reg_every: 16
+    net_d_start_iters: 500
+
+# validation configs
+test:
+  tempo_extent: 0
+  test_freq: 5000  # TODO: fix this
+
+  # whether to save the generated SR results
+  save_res: false   # TODO: always check
+  res_dir: ~   # use default dir
+
+  # whether to save the test results in a json file
+  save_json: true
+  json_dir: ~  # use default dir
+
+  padding_mode: reflect
+  num_pad_front: 0
+
+
+# metric configs
+metric:
+  # PSNR:
+  #   colorspace: y
+  #   mult: 1.0
+
+  # SSIM:
+  #   mult: 1.0
+
+  # ID-based metrics
+  IDS:  # cosine similarity between HR and GT identity features (ArcFace)
+    id_network_path: external_utils/webface_r50.onnx
+    mult: 1.0
+
+  # IDSRef:  # cosine similarity between HR and Ref identity features (ArcFace)
+  #   id_network_path: external_utils/arcface_resnet18.pth
+  #   id_network_config:
+  #     block: IRBlock
+  #     layers: [2, 2, 2, 2]
+  #     use_se: False
+  #   mult: 1.0
+
+  LPIPS:
+    model: net-lin
+    net: alex
+    colorspace: rgb
+    spatial: false
+    version: 0.1
+    mult: 1.0
+
+  # NIQE:
+  #   mult: 1.0
+
+  # MUSIQ:
+  #   mult: 1.0
+
+  # CLIPIQA:
+  #   mult: 1.0
+
+  # SERFIQ:
+  #   mult: 1.0
+
+# logger configs
+logger:
+  tb_freq: 100
+  log_freq: 100
+  decay: 0.99
+  ckpt_freq: 5000
